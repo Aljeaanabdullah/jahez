@@ -40,9 +40,15 @@ after(async () => {
 
 // ---------------------------------------------------------------- demo data
 test('demo data: 3,500 employees numbered 710000-713499, no duplicates', async () => {
-  const { data, error } = await db.from('employees').select('file_number').eq('is_demo', true).range(0, 4999);
-  if (error) throw error;
-  const numbers = data.map((r) => r.file_number);
+  // The API returns at most 1,000 rows per request, so read in pages.
+  const numbers = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await db.from('employees').select('file_number')
+      .eq('is_demo', true).order('file_number').range(from, from + 999);
+    if (error) throw error;
+    numbers.push(...data.map((r) => r.file_number));
+    if (data.length < 1000) break;
+  }
   assert.equal(numbers.length, 3500);
   assert.equal(new Set(numbers).size, 3500);
   assert.equal(Math.min(...numbers), 710000);
@@ -151,13 +157,57 @@ test('admin: can change organisation data and read the audit log', async () => {
 });
 
 // ---------------------------------------------------------------- face data
-test('face templates: no signed-in role can read them, not even admin', async () => {
+test('face templates: only admin sees enrollment details, and nobody reads the embedding', async () => {
   const { error: seedError } = await db.from('face_templates').insert({
     employee_id: employeeARow.id, embedding: [0.1, 0.2, 0.3], model_version: 'test', source: 'web',
+    photo_paths: [`${employeeARow.id}/test.jpg`],
   });
   assert.equal(seedError, null);
-  for (const role of ['employee', 'supervisor', 'admin']) {
+
+  for (const role of ['employee', 'supervisor']) {
     const { data, error } = await sessions[role].from('face_templates').select('id').limit(1);
-    assert.ok(error || data.length === 0, `${role} must not read face templates`);
+    assert.ok(error || data.length === 0, `${role} must not see face templates`);
+  }
+
+  const details = await sessions.admin.from('face_templates')
+    .select('employee_id, source, enrolled_at, photo_paths').eq('model_version', 'test');
+  assert.equal(details.error, null);
+  assert.equal(details.data.length, 1);
+
+  const embedding = await sessions.admin.from('face_templates').select('embedding').limit(1);
+  assert.ok(embedding.error, 'admin must not read the embedding');
+});
+
+test('enrollment photos: admin can open them, supervisor and employee cannot', async () => {
+  const path = `${employeeARow.id}/test.jpg`;
+  const jpeg = new Blob([Uint8Array.from([0xff, 0xd8, 0xff, 0xd9])], { type: 'image/jpeg' });
+  const upload = await db.storage.from('face-enrollment-photos').upload(path, jpeg, { upsert: true });
+  assert.equal(upload.error, null);
+  try {
+    const asAdmin = await sessions.admin.storage.from('face-enrollment-photos').download(path);
+    assert.equal(asAdmin.error, null);
+    for (const role of ['supervisor', 'employee']) {
+      const denied = await sessions[role].storage.from('face-enrollment-photos').download(path);
+      assert.ok(denied.error, `${role} must not open enrollment photos`);
+    }
+  } finally {
+    await db.storage.from('face-enrollment-photos').remove([path]);
+  }
+});
+
+test('punch photos: supervisors and admin can open them, employees cannot', async () => {
+  const path = `${employeeARow.id}/test-punch.jpg`;
+  const jpeg = new Blob([Uint8Array.from([0xff, 0xd8, 0xff, 0xd9])], { type: 'image/jpeg' });
+  const upload = await db.storage.from('punch-photos').upload(path, jpeg, { upsert: true });
+  assert.equal(upload.error, null);
+  try {
+    for (const role of ['supervisor', 'admin']) {
+      const allowed = await sessions[role].storage.from('punch-photos').download(path);
+      assert.equal(allowed.error, null, `${role} should open punch photos`);
+    }
+    const denied = await sessions.employee.storage.from('punch-photos').download(path);
+    assert.ok(denied.error);
+  } finally {
+    await db.storage.from('punch-photos').remove([path]);
   }
 });
