@@ -73,6 +73,7 @@ class _EnrollCaptureScreenState extends State<EnrollCaptureScreen> {
     try {
       final file = await camera.takePicture();
       final result = await analyser.analyse(file.path);
+      if (!mounted) return;
       setState(() {
         if (result.problem != null) {
           _message = widget.strings.quality(result.problem!);
@@ -81,6 +82,14 @@ class _EnrollCaptureScreenState extends State<EnrollCaptureScreen> {
           _shots.add(result);
         }
       });
+    } catch (_) {
+      // Never fail silently: tell HR the photo could not be analysed.
+      if (mounted) {
+        setState(() {
+          _message = widget.strings.error('generic');
+          _messageIsError = true;
+        });
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
