@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+/* Jahez palette: blues + white. Light/dark switch is added in Phase 2. */
+:root {
+  --background: #ffffff;
+  --foreground: #0b1f3a;
+  --primary: #1565c0;
+  --primary-soft: #e3f0fd;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a1628;
+    --foreground: #e6efff;
+    --primary: #64a8f0;
+    --primary-soft: #12294a;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-soft: var(--primary-soft);
+  --font-sans: var(--font-plex-arabic);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-plex-arabic), system-ui, sans-serif;
+}
