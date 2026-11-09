@@ -46,3 +46,10 @@ export async function requireStaff(): Promise<CurrentEmployee & { role: StaffRol
   if (me.mustChangePassword) redirect("/change-password");
   return me as CurrentEmployee & { role: StaffRole };
 }
+
+/** Gate for admin-only pages and actions (organisation, employees, …). */
+export async function requireAdmin(): Promise<CurrentEmployee & { role: "admin" }> {
+  const me = await requireStaff();
+  if (me.role !== "admin") redirect("/");
+  return me as CurrentEmployee & { role: "admin" };
+}

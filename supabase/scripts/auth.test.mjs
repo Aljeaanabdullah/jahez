@@ -3,7 +3,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
-import { serviceClient, signInAs, readCredentials, writeCredentials, SUPABASE_URL, PUBLISHABLE_KEY } from './lib.mjs';
+import { serviceClient, signInAs, readCredentials, writeCredentials, createTempAccount, SUPABASE_URL, PUBLISHABLE_KEY } from './lib.mjs';
 
 const db = serviceClient();
 const credentials = readCredentials();
@@ -107,10 +107,14 @@ test('device: a phone bound to one employee cannot be used by another', async ()
 });
 
 test('device: after the admin unbinds, a new phone can be bound', async () => {
-  const admin = Object.values(credentials.accounts).find((a) => a.role === 'admin');
-  const adminSession = await signInAs(admin.file_number, admin.password);
-  const unbind = await adminSession.from('devices').delete().eq('employee_id', ids[userC.file_number]);
-  assert.equal(unbind.error, null);
+  const admin = await createTempAccount(799912, 'admin');
+  try {
+    const adminSession = await signInAs(admin.file_number, admin.password);
+    const unbind = await adminSession.from('devices').delete().eq('employee_id', ids[userC.file_number]);
+    assert.equal(unbind.error, null);
+  } finally {
+    await admin.remove();
+  }
   const rebound = await sessions.C.rpc('bind_device', { p_device_identifier: PHONE_2, p_platform: 'ios' });
   assert.equal(rebound.data, 'bound');
 });
