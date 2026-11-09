@@ -28,7 +28,9 @@ export const emailFor = (fileNumber: number) => `${fileNumber}@jahez.local`;
 /** Removes the e2e accounts and everything the tests created ("E2E …" names). */
 export async function cleanUp() {
   const db = serviceClient();
-  const numbers = Object.values(E2E_ACCOUNTS);
+  // Fixed test accounts plus employees created by the tests (799950–799999).
+  const numbers: number[] = [...Object.values(E2E_ACCOUNTS)];
+  for (let n = 799950; n <= 799999; n++) numbers.push(n);
   const { data: rows } = await db.from("employees").select("id, user_id").in("file_number", numbers);
   for (const row of rows ?? []) {
     await db.from("employees").delete().eq("id", row.id);

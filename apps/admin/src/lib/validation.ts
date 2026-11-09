@@ -147,3 +147,43 @@ export function intervalToMinutes(interval: string): number {
   if (time) total += Number(time[1]) * 60 + Number(time[2]) + Math.round(Number(time[3]) / 60);
   return total;
 }
+
+// ------------------------------------------------------------------ employees
+const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function parseEmployee(input: Input) {
+  const file_number = Number(read(input, "file_number"));
+  if (!/^\d{6}$/.test(read(input, "file_number")) || file_number < 100000) return fail("invalid_file_number");
+
+  const full_name_ar = read(input, "full_name_ar");
+  const full_name_en = read(input, "full_name_en");
+  if (!full_name_ar || !full_name_en) return fail("name_required");
+  if (full_name_ar.length > 120 || full_name_en.length > 120) return fail("name_too_long");
+
+  const rawPhone = read(input, "phone").replace(/[\s-]/g, "");
+  let phone: string | null = null;
+  if (rawPhone) {
+    const local = rawPhone.replace(/^(\+965|00965)/, "");
+    if (!/^[569]\d{7}$/.test(local)) return fail("invalid_phone");
+    phone = `+965${local}`;
+  }
+
+  const department_id = read(input, "department_id") || null;
+  const work_pattern_id = read(input, "work_pattern_id") || null;
+  if ((department_id && !uuidRe.test(department_id)) || (work_pattern_id && !uuidRe.test(work_pattern_id))) {
+    return fail("generic");
+  }
+
+  const cycle = read(input, "cycle_start_date");
+  if (cycle && !/^\d{4}-\d{2}-\d{2}$/.test(cycle)) return fail("invalid_date");
+
+  return ok({
+    file_number,
+    full_name_ar,
+    full_name_en,
+    phone,
+    department_id,
+    work_pattern_id,
+    cycle_start_date: cycle || null,
+  });
+}

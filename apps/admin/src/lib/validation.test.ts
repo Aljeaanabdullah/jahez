@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { passwordProblem } from "./password";
 import {
   intervalToMinutes,
+  parseEmployee,
   parseBuilding,
   parseDepartment,
   parseHoliday,
@@ -108,5 +110,35 @@ describe("intervalToMinutes", () => {
     expect(intervalToMinutes("2 days")).toBe(2880);
     expect(intervalToMinutes("1 day 12:30:00")).toBe(2190);
     expect(intervalToMinutes("00:00:00")).toBe(0);
+  });
+});
+
+describe("employees", () => {
+  const emp = { file_number: "710500", full_name_ar: "اسم", full_name_en: "Name", phone: "" };
+
+  it("accepts a 6-digit file number and normalises Kuwaiti phone numbers", () => {
+    const r = parseEmployee({ ...emp, phone: "9988 7766" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.value.phone).toBe("+96599887766");
+    const r2 = parseEmployee({ ...emp, phone: "+96551234567" });
+    if (r2.ok) expect(r2.value.phone).toBe("+96551234567");
+  });
+
+  it("refuses bad file numbers and phones", () => {
+    expect(parseEmployee({ ...emp, file_number: "71050" })).toEqual({ ok: false, error: "invalid_file_number" });
+    expect(parseEmployee({ ...emp, file_number: "71050a" })).toEqual({ ok: false, error: "invalid_file_number" });
+    expect(parseEmployee({ ...emp, phone: "12345678" })).toEqual({ ok: false, error: "invalid_phone" });
+    expect(parseEmployee({ ...emp, full_name_en: "" })).toEqual({ ok: false, error: "name_required" });
+  });
+});
+
+describe("password rules", () => {
+  it("match the server rules", () => {
+    expect(passwordProblem("abc12", 710500)).toBe("too_short");
+    expect(passwordProblem("abcdefgh", 710500)).toBe("needs_digit");
+    expect(passwordProblem("12345678", 710500)).toBe("needs_letter");
+    expect(passwordProblem("ab710500c", 710500)).toBe("contains_file_number");
+    expect(passwordProblem("Kuwait2026", 710500)).toBeNull();
+    expect(passwordProblem("كلمة2026سر", 710500)).toBeNull();
   });
 });

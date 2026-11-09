@@ -40,3 +40,24 @@ test("capture organisation screens", async ({ page, context }) => {
   await page.goto("/organisation/departments");
   await page.screenshot({ path: "test-results/screens/departments-phone.png", fullPage: true });
 });
+
+test("capture an employee record PDF with punches", async ({ page }) => {
+  await page.goto("/employees?q=710013");
+  await page.getByRole("link", { name: "فتح" }).click();
+  await page.waitForURL(/\/employees\/[0-9a-f-]{36}$/);
+  const id = page.url().split("/").pop();
+  const res = await page.request.get(`/employees/${id}/export/pdf`);
+  const { writeFileSync, mkdirSync } = await import("node:fs");
+  mkdirSync("test-results/screens", { recursive: true });
+  writeFileSync("test-results/screens/record-710013.pdf", await res.body());
+});
+
+test("capture the employee screens", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/employees");
+  await page.screenshot({ path: "test-results/screens/employees.png" });
+  await page.goto("/employees?q=710013");
+  await page.getByRole("link", { name: "فتح" }).click();
+  await page.waitForURL(/\/employees\/[0-9a-f-]{36}$/);
+  await page.screenshot({ path: "test-results/screens/employee-detail.png", fullPage: true });
+});

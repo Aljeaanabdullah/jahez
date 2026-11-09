@@ -6,6 +6,7 @@ export type StaffRole = "supervisor" | "hr" | "admin";
 
 export type CurrentEmployee = {
   id: string;
+  userId: string;
   fileNumber: number;
   nameAr: string;
   nameEn: string;
@@ -28,6 +29,7 @@ export async function getCurrentEmployee(): Promise<CurrentEmployee | null> {
 
   return {
     id: data.id,
+    userId: auth.user.id,
     fileNumber: data.file_number,
     nameAr: data.full_name_ar,
     nameEn: data.full_name_en,

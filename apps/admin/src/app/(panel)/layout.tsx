@@ -19,6 +19,7 @@ const menu: Record<StaffRole, NavKey[]> = {
 const routes: Partial<Record<NavKey, string>> = {
   dashboard: "/",
   organisation: "/organisation",
+  employees: "/employees",
 };
 
 const itemClass = "flex items-center justify-between gap-2 rounded-lg px-3 py-2";

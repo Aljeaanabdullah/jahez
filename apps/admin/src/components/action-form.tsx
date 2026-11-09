@@ -68,22 +68,24 @@ export function DeleteButton({
   label,
   confirmText,
   errors,
+  variant = "danger",
 }: {
   action: (prev: FormState) => Promise<FormState>;
   label: string;
-  confirmText: string;
+  confirmText?: string;
   errors: Record<string, string>;
+  variant?: "danger" | "secondary";
 }) {
   const [state, formAction, pending] = useActionState<FormState>(action, {});
   return (
     <form
       action={formAction}
       onSubmit={(e) => {
-        if (!window.confirm(confirmText)) e.preventDefault();
+        if (confirmText && !window.confirm(confirmText)) e.preventDefault();
       }}
       className="flex flex-col items-start gap-2"
     >
-      <button type="submit" disabled={pending} className={buttonClass.danger}>
+      <button type="submit" disabled={pending} className={buttonClass[variant]}>
         {label}
       </button>
       {state.error && <Alert kind="error">{errors[state.error] ?? errors.generic}</Alert>}
