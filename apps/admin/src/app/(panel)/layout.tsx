@@ -20,6 +20,7 @@ const routes: Partial<Record<NavKey, string>> = {
   dashboard: "/",
   organisation: "/organisation",
   employees: "/employees",
+  faceEnrollment: "/face-enrollment",
 };
 
 const itemClass = "flex items-center justify-between gap-2 rounded-lg px-3 py-2";

@@ -23,6 +23,8 @@ export async function proxy(request: NextRequest) {
 
   const { data } = await supabase.auth.getUser();
   const isLogin = request.nextUrl.pathname === "/login";
+  // Development-only test page (returns 404 in production).
+  if (process.env.NODE_ENV !== "production" && request.nextUrl.pathname.startsWith("/dev/")) return response;
 
   if (!data.user && !isLogin) {
     return NextResponse.redirect(new URL("/login", request.url));
@@ -31,5 +33,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|webp|ico)$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|models/|.*\\.(?:png|jpg|jpeg|svg|webp|ico)$).*)"],
 };
