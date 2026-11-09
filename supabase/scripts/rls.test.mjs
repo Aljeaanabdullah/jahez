@@ -2,13 +2,14 @@
 // Needs `npm run demo:seed` first. Run with: npm run test:rls
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { serviceClient, publicClient, signInAs, readCredentials } from './lib.mjs';
+import { serviceClient, publicClient, signInAs, readCredentials, createTempAccount } from './lib.mjs';
 
 const db = serviceClient();
 const accounts = Object.values(readCredentials().accounts ?? {});
 const byRole = (role) => accounts.filter((a) => a.role === role);
 
-const admin = byRole('admin')[0];
+// A throw-away admin, so the tests never depend on the real admin's password.
+let admin;
 const supervisor = byRole('supervisor')[0];
 const [employeeA, , , , hrCandidate] = byRole('employee');
 
@@ -22,7 +23,8 @@ const count = async (client, table) => {
 };
 
 before(async () => {
-  assert.ok(admin && supervisor && employeeA && hrCandidate, 'run `npm run demo:seed` first');
+  assert.ok(supervisor && employeeA && hrCandidate, 'run `npm run demo:seed` first');
+  admin = await createTempAccount(799911, 'admin');
   sessions.admin = await signInAs(admin.file_number, admin.password);
   sessions.supervisor = await signInAs(supervisor.file_number, supervisor.password);
   sessions.employee = await signInAs(employeeA.file_number, employeeA.password);
@@ -36,6 +38,7 @@ after(async () => {
   await db.from('notifications').delete().eq('kind', 'test');
   await db.from('departments').delete().eq('name_en', 'RLS test department');
   await db.from('face_templates').delete().eq('model_version', 'test');
+  await admin?.remove();
 });
 
 // ---------------------------------------------------------------- demo data

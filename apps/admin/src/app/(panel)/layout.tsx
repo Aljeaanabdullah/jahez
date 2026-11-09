@@ -3,16 +3,27 @@ import { requireStaff, type StaffRole } from "@/lib/auth";
 import { getPrefs } from "@/lib/prefs";
 import { signOut } from "@/app/actions/auth";
 import { PrefsButtons } from "@/components/prefs-buttons";
+import { NavLink } from "@/components/nav-link";
 import type { Dictionary } from "@/lib/i18n";
 
 type NavKey = keyof Dictionary["nav"];
 
-// Menu per role (docs/PRD.md section 2). Only "Home" is built in Phase 2.
+// Menu per role (docs/PRD.md section 2).
 const menu: Record<StaffRole, NavKey[]> = {
   supervisor: ["dashboard", "liveBoard", "approvals", "reports", "emergencies"],
   hr: ["dashboard", "liveBoard", "approvals", "reports", "faceEnrollment"],
   admin: ["dashboard", "liveBoard", "reports", "employees", "faceEnrollment", "organisation", "emergencies", "auditLog"],
 };
+
+// Screens built so far. The rest show "Soon".
+const routes: Partial<Record<NavKey, string>> = {
+  dashboard: "/",
+  organisation: "/organisation",
+};
+
+const itemClass = "flex items-center justify-between gap-2 rounded-lg px-3 py-2";
+const linkClass = `${itemClass} hover:bg-primary-soft`;
+const activeClass = `${itemClass} bg-primary-soft font-medium text-primary`;
 
 export default async function PanelLayout({ children }: { children: ReactNode }) {
   const me = await requireStaff();
@@ -29,21 +40,19 @@ export default async function PanelLayout({ children }: { children: ReactNode })
         <nav aria-label={t.panelTitle}>
           <ul className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-col md:overflow-visible">
             {menu[me.role].map((key) => {
-              const active = key === "dashboard";
+              const href = routes[key];
               return (
                 <li key={key} className="shrink-0">
-                  <span
-                    aria-current={active ? "page" : undefined}
-                    aria-disabled={active ? undefined : true}
-                    className={
-                      active
-                        ? "flex items-center justify-between gap-2 rounded-lg bg-primary-soft px-3 py-2 font-medium text-primary"
-                        : "flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-muted"
-                    }
-                  >
-                    {t.nav[key]}
-                    {!active && <span className="rounded bg-line px-1.5 text-[10px]">{t.comingSoon}</span>}
-                  </span>
+                  {href ? (
+                    <NavLink href={href} exact={href === "/"} className={linkClass} activeClassName={activeClass}>
+                      {t.nav[key]}
+                    </NavLink>
+                  ) : (
+                    <span aria-disabled className={`${itemClass} text-muted`}>
+                      {t.nav[key]}
+                      <span className="rounded bg-line px-1.5 text-[10px]">{t.comingSoon}</span>
+                    </span>
+                  )}
                 </li>
               );
             })}

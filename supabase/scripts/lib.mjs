@@ -48,6 +48,38 @@ export async function signInAs(fileNumber, password) {
   return client;
 }
 
+/**
+ * Creates a throw-away account for a test (random password, kept in memory only)
+ * and returns it with a remove() function. Tests use this instead of the real admin.
+ */
+export async function createTempAccount(fileNumber, role) {
+  const { randomBytes } = await import('node:crypto');
+  const db = serviceClient();
+  await removeAccount(db, fileNumber);
+  const password = `T${randomBytes(9).toString('base64url')}7`;
+  const { data, error } = await db.auth.admin.createUser({ email: emailFor(fileNumber), password, email_confirm: true });
+  if (error) throw new Error(`createUser ${fileNumber}: ${error.message}`);
+  const { error: rowError } = await db.from('employees').insert({
+    file_number: fileNumber,
+    user_id: data.user.id,
+    full_name_ar: `حساب اختبار ${role}`,
+    full_name_en: `Test ${role}`,
+    role,
+    must_change_password: false,
+    is_demo: false, // not counted as demo data; removed by remove()
+  });
+  if (rowError) throw new Error(`employee ${fileNumber}: ${rowError.message}`);
+  return { file_number: fileNumber, role, password, remove: () => removeAccount(db, fileNumber) };
+}
+
+async function removeAccount(db, fileNumber) {
+  const { data: row } = await db.from('employees').select('id, user_id').eq('file_number', fileNumber).maybeSingle();
+  if (row) {
+    await db.from('employees').delete().eq('id', row.id);
+    if (row.user_id) await db.auth.admin.deleteUser(row.user_id);
+  }
+}
+
 export function readCredentials() {
   if (!existsSync(credentialsFile)) return {};
   return JSON.parse(readFileSync(credentialsFile, 'utf8'));
