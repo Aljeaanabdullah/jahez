@@ -21,9 +21,9 @@ Employee attendance app for one company in Kuwait: punch in/out by face (with li
 5. Never change docs/PRD.md without asking the user. If requirements change, update PRD.md first, then the code.
 
 ## Rules from the plan
-- Employee ID is the file number (رقم الملف الوظيفي). Use dummy data only until the user says otherwise: 3,500 random employees numbered 710000–713499; system admin is 735043. The admin assigns HR roles and creates all initial passwords (changed on first login).
+- Employee ID is the file number (رقم الملف الوظيفي). Use dummy data only until the user says otherwise: 3,500 random employees numbered 710000–713499; system admin is 735043. The admin assigns HR roles and types every initial password (same rules; changed on first login).
 - Validate every punch on the server: server time, geofence of a site enabled for that employee, bound device, face match + liveness. Reject VPN, mock location, root/jailbreak. Punching needs internet.
 - Read location only at punch time and during an active emergency. No background tracking.
-- Face data needs recorded consent first. Face embeddings are readable by no client role; enrollment photos (bucket `face-enrollment-photos`) are viewable by the admin only. Punch photos auto-delete after 3 months. Termination = export full record (Excel + PDF), then delete everything.
+- Face data needs recorded consent first. Face embeddings are readable by no client role; enrollment photos (bucket `face-enrollment-photos`) are viewable by the admin only. Punch photos auto-delete after 3 months. Termination = export full record (Excel + PDF), then delete everything except the audit log (owner decision).
 - Every table has RLS for the 4 roles (employee, supervisor, HR, admin). No secrets in the repo; use `.env.example`.
 - Prefer free services. Design: blues + white, light/dark theme, RTL-correct.
