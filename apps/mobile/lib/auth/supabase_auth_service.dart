@@ -62,8 +62,15 @@ class SupabaseAuthService implements AuthService {
     } on SocketException {
       throw const AuthFailure('no_internet');
     }
-    // Refresh the session so it reflects the new password.
-    await _client.auth.refreshSession();
+    // The password is saved. Changing it ends the old session, so sign in again with the
+    // new password (refreshing the old session fails). Same approach as the web panel.
+    final email = _client.auth.currentUser?.email;
+    if (email == null) return;
+    try {
+      await _client.auth.signInWithPassword(email: email, password: newPassword);
+    } on AuthException {
+      // The change itself succeeded; the user can still sign in with the new password.
+    }
   }
 
   @override
