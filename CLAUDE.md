@@ -11,6 +11,7 @@ Employee attendance app for one company in Kuwait: punch in/out by face (with li
 - `apps/admin` — Next.js web panel. Face enrollment uses the same MobileFaceNet model in the browser.
 - `supabase/` — Supabase project `jahez` (ref `etaetoflotynlmgrehuu`, eu-central-1): Postgres, RLS, Auth, Storage, Edge Functions, cron.
 - `docs/` — PRD and plan. Push notifications: FCM.
+- Maps: OpenStreetMap now (flutter_map / Leaflet) behind one map interface, to switch to Google Maps later. Test on Android first (dev machine is Windows).
 
 ## How to work
 1. One phase at a time, in the order of docs/PLAN.md. Nothing outside the current phase.
