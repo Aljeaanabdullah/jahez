@@ -1,0 +1,13 @@
+{
+  "name": "jahez-supabase-scripts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "demo:seed": "node demo.mjs seed",
+    "demo:reset": "node demo.mjs reset",
+    "test:rls": "node --test rls.test.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.119.0"
+  }
+}

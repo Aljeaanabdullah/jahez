@@ -41,6 +41,22 @@ flutter run
 
 انسخ `.env.example` إلى `apps/admin/.env.local` وضع فيه المفاتيح. **لا ترفع ملفات المفاتيح إلى GitHub أبداً.**
 
+## البيانات الوهمية واختبارات الصلاحيات
+
+تحتاج المفتاح السري في `apps/admin/.env.local`.
+
+```bash
+cd supabase/scripts
+npm install
+npm run demo:seed
+npm run test:rls
+npm run demo:reset
+```
+
+- `demo:seed`: ينشئ 3,500 موظف وهمي وحسابات دخول تجريبية، وكلمات المرور تُحفظ في `supabase/scripts/.demo-credentials.json` (لا يُرفع إلى GitHub).
+- `test:rls`: يختبر صلاحيات كل دور.
+- `demo:reset`: يحذف البيانات الوهمية، ويُبقي حساب مدير النظام 735043.
+
 ## الفحص الآلي
 
 مع كل Pull Request يشغّل GitHub الفحوصات التالية:
