@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans_Arabic } from "next/font/google";
+import { getPrefs } from "@/lib/prefs";
 import "./globals.css";
 
 const plexArabic = IBM_Plex_Sans_Arabic({
@@ -13,12 +14,13 @@ export const metadata: Metadata = {
   description: "نظام تحضير الموظفين",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const { lang, dir, theme } = await getPrefs();
   return (
     <html
-      lang="ar"
-      dir="rtl"
-      className={`${plexArabic.variable} h-full antialiased`}
+      lang={lang}
+      dir={dir}
+      className={`${plexArabic.variable} ${theme === "dark" ? "dark" : ""} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
