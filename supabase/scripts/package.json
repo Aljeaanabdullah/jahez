@@ -5,7 +5,9 @@
   "scripts": {
     "demo:seed": "node demo.mjs seed",
     "demo:reset": "node demo.mjs reset",
-    "test:rls": "node --test rls.test.mjs"
+    "test:rls": "node --test rls.test.mjs",
+    "test:auth": "node --test auth.test.mjs",
+    "test": "node --test rls.test.mjs auth.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0"

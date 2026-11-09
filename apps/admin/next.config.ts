@@ -1,9 +1,8 @@
 import type { NextConfig } from "next";
 
+// The admin panel is fully signed-in and per-request, so Cache Components /
+// Partial Prefetching (static shells) bring no benefit here and are left off.
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
   turbopack: {
     rules: {
       "*.css": {
