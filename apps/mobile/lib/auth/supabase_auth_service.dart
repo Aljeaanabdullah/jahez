@@ -18,7 +18,7 @@ class SupabaseAuthService implements AuthService {
     if (user == null) return null;
     final row = await _client
         .from('employees')
-        .select('file_number, full_name_ar, full_name_en, role, must_change_password, is_active')
+        .select('id, file_number, full_name_ar, full_name_en, role, must_change_password, is_active')
         .eq('user_id', user.id)
         .maybeSingle();
     if (row == null || row['is_active'] != true) {
@@ -26,6 +26,7 @@ class SupabaseAuthService implements AuthService {
       return null;
     }
     return Profile(
+      id: row['id'] as String,
       fileNumber: row['file_number'] as int,
       nameAr: row['full_name_ar'] as String,
       nameEn: row['full_name_en'] as String,
@@ -78,6 +79,21 @@ class SupabaseAuthService implements AuthService {
       'other_device' => DeviceStatus.otherDevice,
       _ => DeviceStatus.deviceTaken,
     };
+  }
+
+  @override
+  Future<bool> hasConsent() async {
+    final profile = await currentProfile();
+    if (profile == null) return false;
+    final rows = await _client.from('consents').select('id').eq('employee_id', profile.id).limit(1);
+    return (rows as List).isNotEmpty;
+  }
+
+  @override
+  Future<void> giveConsent() async {
+    final profile = await currentProfile();
+    if (profile == null) throw const AuthFailure('generic');
+    await _client.from('consents').insert({'employee_id': profile.id, 'consent_version': consentVersion});
   }
 
   @override

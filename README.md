@@ -37,6 +37,19 @@ flutter pub get
 flutter run
 ```
 
+## نموذج الوجه ومحاكي أندرويد
+
+- نموذج الوجه نفسه يعمل في الويب والجوال. طريقة بنائه واختباره في [tools/face-model/README.md](tools/face-model/README.md).
+- اختبار النموذج داخل المحاكي أو الجوال:
+
+```bash
+node tools/face-model/make_mobile_parity.mjs
+cd apps/mobile
+flutter test integration_test/face_model_test.dart -d emulator-5554
+```
+
+- تشغيل التطبيق على المحاكي: `flutter run -d emulator-5554` (المحاكي اسمه jahez، وكاميرته الأمامية هي كاميرا اللابتوب).
+
 ## الإعدادات
 
 انسخ `.env.example` إلى `apps/admin/.env.local` وضع فيه المفاتيح. **لا ترفع ملفات المفاتيح إلى GitHub أبداً.**

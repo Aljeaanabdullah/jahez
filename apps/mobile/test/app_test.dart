@@ -2,25 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jahez/app.dart';
 import 'package:jahez/auth/auth_service.dart';
+import 'package:jahez/enroll/enroll_service.dart';
+import 'package:jahez/face/face_capture.dart';
 import 'package:jahez/settings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// In-memory stand-in for the Supabase backend.
 class FakeAuth implements AuthService {
-  FakeAuth({this.password = 'Start1234', this.mustChange = true, this.device = DeviceStatus.bound});
+  FakeAuth({
+    this.password = 'Start1234',
+    this.mustChange = true,
+    this.device = DeviceStatus.bound,
+    this.consented = true,
+    this.role = 'employee',
+  });
 
   String password;
   bool mustChange;
   DeviceStatus device;
+  bool consented;
+  String role;
   bool signedIn = false;
   String? lastNewPassword;
   String? serverPasswordError;
 
   Profile get _profile => Profile(
+        id: '00000000-0000-0000-0000-000000000013',
         fileNumber: 710013,
         nameAr: 'محمد سالم الغانم',
         nameEn: 'Mohammed Salem Al-Ghanim',
-        role: 'employee',
+        role: role,
         mustChangePassword: mustChange,
       );
 
@@ -47,12 +58,30 @@ class FakeAuth implements AuthService {
   Future<DeviceStatus> bindThisDevice() async => device;
 
   @override
+  Future<bool> hasConsent() async => consented;
+
+  @override
+  Future<void> giveConsent() async => consented = true;
+
+  @override
   Future<void> signOut() async => signedIn = false;
 }
 
-Future<void> pumpApp(WidgetTester tester, FakeAuth auth, {bool setupDone = true, String lang = 'ar'}) async {
+class FakeEnroll implements EnrollService {
+  final targets = <int, EnrollTarget>{};
+
+  @override
+  Future<EnrollTarget?> find(int fileNumber) async => targets[fileNumber];
+
+  @override
+  Future<void> enroll(String employeeId, List<String> photos, List<List<double>> descriptors) async {}
+}
+
+Future<FaceAnalyser> noAnalyser() => throw UnimplementedError('camera not used in these tests');
+
+Future<void> pumpApp(WidgetTester tester, FakeAuth auth, {bool setupDone = true, String lang = 'ar', FakeEnroll? enroll}) async {
   final settings = AppSettings(locale: Locale(lang), setupDone: setupDone);
-  await tester.pumpWidget(JahezApp(settings: settings, auth: auth));
+  await tester.pumpWidget(JahezApp(settings: settings, auth: auth, enroll: enroll ?? FakeEnroll(), analyserFactory: noAnalyser));
   await tester.pumpAndSettle();
 }
 
@@ -163,5 +192,58 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('signIn')), findsOneWidget);
     expect(auth.signedIn, false);
+  });
+
+  testWidgets('without consent the employee sees the consent screen; accepting it opens home', (tester) async {
+    final auth = FakeAuth(mustChange: false, device: DeviceStatus.ok, consented: false)..signedIn = true;
+    await pumpApp(tester, auth);
+    expect(find.text('الموافقة على جمع البيانات'), findsOneWidget);
+    expect(find.byKey(const Key('welcome')), findsNothing);
+    await tester.tap(find.byKey(const Key('acceptConsent')));
+    await tester.pumpAndSettle();
+    expect(auth.consented, true);
+    expect(find.byKey(const Key('welcome')), findsOneWidget);
+  });
+
+  testWidgets('after the first password change the consent screen comes next', (tester) async {
+    final auth = FakeAuth(consented: false);
+    await pumpApp(tester, auth);
+    await signIn(tester, '710013', 'Start1234');
+    await tester.enterText(find.byKey(const Key('newPassword')), 'Kuwait2026a');
+    await tester.enterText(find.byKey(const Key('confirmPassword')), 'Kuwait2026a');
+    await tester.tap(find.byKey(const Key('save')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('acceptConsent')), findsOneWidget);
+  });
+
+  testWidgets('only HR sees the face enrollment button', (tester) async {
+    await pumpApp(tester, FakeAuth(mustChange: false, device: DeviceStatus.ok)..signedIn = true);
+    expect(find.byKey(const Key('openEnroll')), findsNothing);
+  });
+
+  testWidgets('HR: enrollment explains why an employee cannot be enrolled yet', (tester) async {
+    final enroll = FakeEnroll();
+    enroll.targets[710100] = const EnrollTarget(id: 'a', fileNumber: 710100, nameAr: 'بلا موافقة', nameEn: 'No consent', isActive: true, hasLogin: true, hasConsent: false, enrolled: false);
+    enroll.targets[710101] = const EnrollTarget(id: 'b', fileNumber: 710101, nameAr: 'جاهز', nameEn: 'Ready', isActive: true, hasLogin: true, hasConsent: true, enrolled: true);
+    await pumpApp(tester, FakeAuth(mustChange: false, device: DeviceStatus.ok, role: 'hr')..signedIn = true, enroll: enroll);
+
+    await tester.tap(find.byKey(const Key('openEnroll')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('enrollFile')), '710100');
+    await tester.tap(find.byKey(const Key('enrollFind')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('enrollBlocker')), findsOneWidget);
+    expect(find.byKey(const Key('enrollStart')), findsNothing);
+
+    await tester.enterText(find.byKey(const Key('enrollFile')), '710101');
+    await tester.tap(find.byKey(const Key('enrollFind')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('enrollStart')), findsOneWidget);
+    expect(find.text('إعادة التسجيل تستبدل البصمة والصور القديمة.'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('enrollFile')), '799999');
+    await tester.tap(find.byKey(const Key('enrollFind')));
+    await tester.pumpAndSettle();
+    expect(find.text('لا يوجد موظف بهذا الرقم.'), findsOneWidget);
   });
 }
