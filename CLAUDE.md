@@ -7,8 +7,8 @@ Employee attendance app for one company in Kuwait: punch in/out by face (with li
 - Talk to the user in Arabic, in simple words. The UI is Arabic + English.
 
 ## Stack and folders
-- `apps/mobile` — Flutter (iOS + Android). Face: Google ML Kit + MobileFaceNet (TFLite), on-device.
-- `apps/admin` — Next.js web panel. Face enrollment uses the same MobileFaceNet model in the browser.
+- `apps/mobile` — Flutter (iOS + Android). Face: Google ML Kit (detection) + dlib ResNet face model (TFLite, public domain), on-device.
+- `apps/admin` — Next.js web panel. Face enrollment uses the same dlib ResNet weights in the browser (face-api.js). Consent is given in the mobile app only.
 - `supabase/` — Supabase project `jahez` (ref `etaetoflotynlmgrehuu`, eu-central-1): Postgres, RLS, Auth, Storage, Edge Functions, cron.
 - `docs/` — PRD and plan. Push notifications: FCM.
 - Maps: OpenStreetMap now (flutter_map / Leaflet) behind one map interface, to switch to Google Maps later. Test on Android first (dev machine is Windows).

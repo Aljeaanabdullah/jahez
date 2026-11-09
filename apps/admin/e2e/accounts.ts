@@ -9,6 +9,7 @@ export const E2E_ACCOUNTS = {
   admin: 799901,
   supervisor: 799902,
   employee: 799903,
+  hr: 799904,
 } as const;
 
 export type E2ERole = keyof typeof E2E_ACCOUNTS;

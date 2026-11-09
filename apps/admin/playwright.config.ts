@@ -17,6 +17,9 @@ export default defineConfig({
     baseURL: "http://localhost:3000",
     trace: "retain-on-failure",
     locale: "ar-KW",
+    // A fake camera (moving test pattern, no face) for the face enrollment screens.
+    permissions: ["camera"],
+    launchOptions: { args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] },
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {

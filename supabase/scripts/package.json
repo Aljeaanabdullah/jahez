@@ -7,7 +7,8 @@
     "demo:reset": "node demo.mjs reset",
     "test:rls": "node --test rls.test.mjs",
     "test:auth": "node --test auth.test.mjs",
-    "test": "node --test rls.test.mjs auth.test.mjs"
+    "test": "node --test rls.test.mjs auth.test.mjs enroll.test.mjs",
+    "test:enroll": "node --test enroll.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0"

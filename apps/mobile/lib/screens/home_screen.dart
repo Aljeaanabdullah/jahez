@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../auth/auth_service.dart';
+import '../enroll/enroll_service.dart';
+import '../face/face_capture.dart';
 import '../l10n.dart';
 import '../settings.dart';
+import 'enroll_search_screen.dart';
 
 /// Temporary home: greeting + settings. The real punch screen comes in Phase 6.
 class HomeScreen extends StatelessWidget {
@@ -12,12 +15,16 @@ class HomeScreen extends StatelessWidget {
     required this.settings,
     required this.profile,
     required this.onSignOut,
+    required this.enroll,
+    required this.analyserFactory,
   });
 
   final Strings strings;
   final AppSettings settings;
   final Profile profile;
   final VoidCallback onSignOut;
+  final EnrollService enroll;
+  final Future<FaceAnalyser> Function() analyserFactory;
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +42,22 @@ class HomeScreen extends StatelessWidget {
           Text('${profile.fileNumber}', textDirection: TextDirection.ltr, textAlign: TextAlign.start),
           const SizedBox(height: 24),
           Text(s.homeComingSoon),
+          if (profile.role == 'hr') ...[
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              key: const Key('openEnroll'),
+              icon: const Icon(Icons.face_retouching_natural),
+              label: Text(s.enrollTitle),
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => EnrollSearchScreen(
+                  strings: s,
+                  isArabic: !isEnglish,
+                  service: enroll,
+                  analyserFactory: analyserFactory,
+                ),
+              )),
+            ),
+          ],
           const Divider(height: 48),
           Text(s.settings, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),

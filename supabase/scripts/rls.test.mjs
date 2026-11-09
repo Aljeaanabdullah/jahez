@@ -162,7 +162,7 @@ test('admin: can change organisation data and read the audit log', async () => {
 // ---------------------------------------------------------------- face data
 test('face templates: only admin sees enrollment details, and nobody reads the embedding', async () => {
   const { error: seedError } = await db.from('face_templates').insert({
-    employee_id: employeeARow.id, embedding: [0.1, 0.2, 0.3], model_version: 'test', source: 'web',
+    employee_id: employeeARow.id, embedding: `[${Array(128).fill(0.01).join(',')}]`, model_version: 'test', source: 'web',
     photo_paths: [`${employeeARow.id}/test.jpg`],
   });
   assert.equal(seedError, null);

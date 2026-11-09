@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'auth/auth_service.dart';
+import 'enroll/enroll_service.dart';
+import 'face/face_capture.dart';
 import 'l10n.dart';
 import 'screens/change_password_screen.dart';
+import 'screens/consent_screen.dart';
 import 'screens/device_blocked_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
@@ -14,10 +17,18 @@ import 'settings.dart';
 const seedBlue = Color(0xFF1565C0);
 
 class JahezApp extends StatelessWidget {
-  const JahezApp({super.key, required this.settings, required this.auth});
+  const JahezApp({
+    super.key,
+    required this.settings,
+    required this.auth,
+    required this.enroll,
+    required this.analyserFactory,
+  });
 
   final AppSettings settings;
   final AuthService auth;
+  final EnrollService enroll;
+  final Future<FaceAnalyser> Function() analyserFactory;
 
   @override
   Widget build(BuildContext context) {
@@ -34,22 +45,30 @@ class JahezApp extends StatelessWidget {
         darkTheme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: seedBlue, brightness: Brightness.dark),
         ),
-        home: AppFlow(settings: settings, auth: auth),
+        home: AppFlow(settings: settings, auth: auth, enroll: enroll, analyserFactory: analyserFactory),
       ),
     );
   }
 }
 
-enum _Step { loading, setup, login, changePassword, blocked, home }
+enum _Step { loading, setup, login, changePassword, blocked, consent, home }
 
 /// Decides which screen to show:
 /// first launch -> setup; signed out -> login; then bind the phone;
-/// then a forced password change on first sign-in; then home.
+/// then a forced password change on first sign-in; then consent (once); then home.
 class AppFlow extends StatefulWidget {
-  const AppFlow({super.key, required this.settings, required this.auth});
+  const AppFlow({
+    super.key,
+    required this.settings,
+    required this.auth,
+    required this.enroll,
+    required this.analyserFactory,
+  });
 
   final AppSettings settings;
   final AuthService auth;
+  final EnrollService enroll;
+  final Future<FaceAnalyser> Function() analyserFactory;
 
   @override
   State<AppFlow> createState() => _AppFlowState();
@@ -95,7 +114,16 @@ class _AppFlowState extends State<AppFlow> {
       });
       return;
     }
-    setState(() => _step = profile.mustChangePassword ? _Step.changePassword : _Step.home);
+    if (profile.mustChangePassword) {
+      setState(() => _step = _Step.changePassword);
+      return;
+    }
+    await _afterPassword();
+  }
+
+  Future<void> _afterPassword() async {
+    final consented = await widget.auth.hasConsent();
+    if (mounted) setState(() => _step = consented ? _Step.home : _Step.consent);
   }
 
   Future<void> _signOut() async {
@@ -117,17 +145,27 @@ class _AppFlowState extends State<AppFlow> {
           strings: s,
           auth: widget.auth,
           fileNumber: _profile!.fileNumber,
-          onChanged: () => setState(() {
+          onChanged: () {
             _profile = _profile!.copyWith(mustChangePassword: false);
-            _step = _Step.home;
-          }),
+            _afterPassword();
+          },
         ),
       _Step.blocked => DeviceBlockedScreen(strings: s, code: _blockedCode, onSignOut: _signOut),
+      _Step.consent => ConsentScreen(
+          strings: s,
+          onSignOut: _signOut,
+          onAccept: () async {
+            await widget.auth.giveConsent();
+            if (mounted) setState(() => _step = _Step.home);
+          },
+        ),
       _Step.home => HomeScreen(
           strings: s,
           settings: widget.settings,
           profile: _profile!,
           onSignOut: _signOut,
+          enroll: widget.enroll,
+          analyserFactory: widget.analyserFactory,
         ),
     };
   }

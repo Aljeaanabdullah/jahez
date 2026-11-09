@@ -5,3 +5,5 @@ analyzer:
     - build/**
     - android/**
     - ios/**
+    # Runs only on a phone/emulator with generated data (tools/face-model/make_mobile_parity.mjs).
+    - integration_test/face_model_test.dart

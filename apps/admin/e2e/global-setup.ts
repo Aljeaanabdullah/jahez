@@ -37,7 +37,7 @@ export default async function globalSetup(config: FullConfig) {
   mkdirSync(path.dirname(authFile("admin")), { recursive: true });
   const baseURL = config.projects[0].use.baseURL!;
   const browser = await chromium.launch();
-  for (const role of ["admin", "supervisor"] as const) {
+  for (const role of ["admin", "supervisor", "hr"] as const) {
     const page = await browser.newPage({ baseURL });
     await page.goto("/login");
     await page.locator('input[name="fileNumber"]').fill(String(E2E_ACCOUNTS[role]));
