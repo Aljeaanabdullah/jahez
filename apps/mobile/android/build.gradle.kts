@@ -15,13 +15,16 @@ subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
-// Some plugins (tflite_flutter) compile Java for 11 but Kotlin for 17, which Gradle refuses.
-// Align every Android library's Java target with Kotlin's (17).
+// Plugins disagree on Java vs Kotlin targets (tflite_flutter, google_mlkit_commons),
+// which Gradle refuses. Compile every Android library for Java 17 on both sides.
 subprojects {
     afterEvaluate {
         extensions.findByType(com.android.build.gradle.LibraryExtension::class.java)?.compileOptions {
             sourceCompatibility = JavaVersion.VERSION_17
             targetCompatibility = JavaVersion.VERSION_17
+        }
+        tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class.java).configureEach {
+            compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
     }
 }
