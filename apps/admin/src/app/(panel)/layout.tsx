@@ -10,9 +10,10 @@ type NavKey = keyof Dictionary["nav"];
 
 // Menu per role (docs/PRD.md section 2).
 const menu: Record<StaffRole, NavKey[]> = {
-  supervisor: ["dashboard", "liveBoard", "approvals", "reports", "emergencies"],
-  hr: ["dashboard", "liveBoard", "approvals", "reports", "faceEnrollment"],
-  admin: ["dashboard", "liveBoard", "reports", "employees", "faceEnrollment", "organisation", "emergencies", "auditLog"],
+  supervisor: ["dashboard", "liveBoard", "approvals", "records", "reports", "emergencies"],
+  hr: ["dashboard", "liveBoard", "approvals", "records", "reports", "faceEnrollment"],
+  // The admin approves in two cases (PRD 7.2): no department supervisor, and HR employees' requests.
+  admin: ["dashboard", "liveBoard", "approvals", "records", "reports", "employees", "faceEnrollment", "organisation", "emergencies", "auditLog"],
 };
 
 // Screens built so far. The rest show "Soon".
@@ -21,6 +22,8 @@ const routes: Partial<Record<NavKey, string>> = {
   organisation: "/organisation",
   employees: "/employees",
   faceEnrollment: "/face-enrollment",
+  approvals: "/approvals",
+  records: "/records",
 };
 
 const itemClass = "flex items-center justify-between gap-2 rounded-lg px-3 py-2";

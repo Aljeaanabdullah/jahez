@@ -8,7 +8,7 @@ import { ActionForm, DeleteButton } from "@/components/action-form";
 import { Badge, buttonClass, Card, Field, Input, Select } from "@/components/ui";
 import { setActive, setPassword, setRole, setSites, unbindDevice, updateEmployee } from "../actions";
 import { EmployeeFields } from "../employee-fields";
-import { AttendanceHistory } from "./attendance-history";
+import { AttendanceHistory } from "@/components/attendance-history";
 
 export default async function EmployeePage({ params }: PageProps<"/employees/[id]">) {
   const { id } = await params;

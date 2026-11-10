@@ -6,9 +6,13 @@ import '../face/face_capture.dart';
 import '../l10n.dart';
 import '../punch/phone_checks.dart';
 import '../punch/punch_service.dart';
+import '../requests/requests_service.dart';
 import '../settings.dart';
 import 'enroll_search_screen.dart';
+import 'approvals_screen.dart';
+import 'month_record_screen.dart';
 import 'punch_screen.dart';
+import 'requests_screens.dart';
 
 /// Home: punch button, today's punches, HR tools, settings.
 class HomeScreen extends StatefulWidget {
@@ -22,6 +26,7 @@ class HomeScreen extends StatefulWidget {
     required this.analyserFactory,
     required this.punch,
     required this.checks,
+    required this.requests,
   });
 
   final Strings strings;
@@ -32,6 +37,7 @@ class HomeScreen extends StatefulWidget {
   final Future<FaceAnalyser> Function() analyserFactory;
   final PunchService punch;
   final PhoneChecks checks;
+  final RequestsService requests;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -104,6 +110,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _open(Widget screen) async {
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+    await _load();
+  }
+
   Future<void> _punch() async {
     final isEnglish = widget.settings.locale.languageCode == 'en';
     await Navigator.of(context).push(MaterialPageRoute(
@@ -164,6 +175,51 @@ class _HomeScreenState extends State<HomeScreen> {
                   subtitle: p.accepted ? null : Text(s.punchReason(p.reason ?? 'generic')),
                   trailing: Text(TimeOfDay.fromDateTime(p.at).format(context)),
                 ),
+            const SizedBox(height: 24),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  key: const Key('openRecord'),
+                  icon: const Icon(Icons.calendar_month),
+                  label: Text(s.get('my_record')),
+                  onPressed: () => _open(MonthRecordScreen(
+                    strings: s,
+                    isArabic: !isEnglish,
+                    service: widget.requests,
+                    employeeId: widget.profile.id,
+                    title: s.get('my_record'),
+                  )),
+                ),
+                OutlinedButton.icon(
+                  key: const Key('openRequests'),
+                  icon: const Icon(Icons.assignment),
+                  label: Text(s.get('my_requests')),
+                  onPressed: () => _open(MyRequestsScreen(strings: s, isArabic: !isEnglish, service: widget.requests)),
+                ),
+                if (widget.profile.role != 'employee') ...[
+                  OutlinedButton.icon(
+                    key: const Key('openApprovals'),
+                    icon: const Icon(Icons.fact_check),
+                    label: Text(s.get('approvals')),
+                    onPressed: () => _open(ApprovalsScreen(strings: s, isArabic: !isEnglish, service: widget.requests)),
+                  ),
+                  OutlinedButton.icon(
+                    key: const Key('openLookup'),
+                    icon: const Icon(Icons.person_search),
+                    label: Text(s.get('employee_record')),
+                    onPressed: () => _open(EmployeeLookupScreen(
+                      strings: s,
+                      isArabic: !isEnglish,
+                      service: widget.requests,
+                      // PRD 4.4: punch photos for supervisors and the system admin only.
+                      withPhotos: widget.profile.role == 'supervisor' || widget.profile.role == 'admin',
+                    )),
+                  ),
+                ],
+              ],
+            ),
             if (widget.profile.role == 'hr') ...[
               const SizedBox(height: 24),
               OutlinedButton.icon(
