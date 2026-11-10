@@ -4,6 +4,8 @@ import 'package:jahez/app.dart';
 import 'package:jahez/auth/auth_service.dart';
 import 'package:jahez/enroll/enroll_service.dart';
 import 'package:jahez/face/face_capture.dart';
+import 'package:jahez/punch/phone_checks.dart';
+import 'package:jahez/punch/punch_service.dart';
 import 'package:jahez/settings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -79,9 +81,40 @@ class FakeEnroll implements EnrollService {
 
 Future<FaceAnalyser> noAnalyser() => throw UnimplementedError('camera not used in these tests');
 
-Future<void> pumpApp(WidgetTester tester, FakeAuth auth, {bool setupDone = true, String lang = 'ar', FakeEnroll? enroll}) async {
+class FakePunch implements PunchService {
+  List<PunchEntry> entries = [];
+
+  @override
+  Future<List<PunchEntry>> today() async => entries;
+
+  @override
+  Future<PunchResult> punch({
+    required double lat,
+    required double lng,
+    required double accuracy,
+    required Map<String, dynamic> report,
+    required List<double> descriptor,
+    required String photoBase64,
+  }) async =>
+      throw UnimplementedError('the camera step is not reached in these tests');
+}
+
+class FakeChecks implements PhoneChecks {
+  FakeChecks(this.report);
+  final PhoneReport report;
+
+  @override
+  Future<PhoneReport> run() async => report;
+}
+
+const okChecks = PhoneReport(vpn: false, rooted: false, mockLocation: false, position: null);
+
+Future<void> pumpApp(WidgetTester tester, FakeAuth auth,
+    {bool setupDone = true, String lang = 'ar', FakeEnroll? enroll, FakePunch? punch, PhoneReport checks = okChecks}) async {
   final settings = AppSettings(locale: Locale(lang), setupDone: setupDone);
-  await tester.pumpWidget(JahezApp(settings: settings, auth: auth, enroll: enroll ?? FakeEnroll(), analyserFactory: noAnalyser));
+  await tester.pumpWidget(JahezApp(settings: settings, auth: auth, enroll: enroll ?? FakeEnroll(), analyserFactory: noAnalyser,
+      punch: punch ?? FakePunch(),
+      checks: FakeChecks(checks)));
   await tester.pumpAndSettle();
 }
 
@@ -245,5 +278,37 @@ void main() {
     await tester.tap(find.byKey(const Key('enrollFind')));
     await tester.pumpAndSettle();
     expect(find.text('لا يوجد موظف بهذا الرقم.'), findsOneWidget);
+  });
+
+  testWidgets("home shows the punch button and today's punches", (tester) async {
+    final punch = FakePunch()
+      ..entries = [
+        PunchEntry(type: 'check_in', at: DateTime(2026, 11, 10, 7, 5), accepted: true),
+        PunchEntry(type: 'check_in', at: DateTime(2026, 11, 10, 7, 1), accepted: false, reason: 'outside_site'),
+      ];
+    await pumpApp(tester, FakeAuth(mustChange: false, device: DeviceStatus.ok)..signedIn = true, punch: punch);
+    // Last accepted punch was in, so the button offers out.
+    expect(find.text('تسجيل خروج'), findsWidgets);
+    expect(find.text('أنت خارج نطاق موقع العمل.'), findsOneWidget);
+  });
+
+  testWidgets('with a VPN on, the punch stops before the camera with a clear reason', (tester) async {
+    await pumpApp(
+      tester,
+      FakeAuth(mustChange: false, device: DeviceStatus.ok)..signedIn = true,
+      checks: const PhoneReport(vpn: true, rooted: false, mockLocation: false, position: null),
+    );
+    await tester.tap(find.byKey(const Key('punchButton')));
+    await tester.pumpAndSettle();
+    expect(find.text('لم يتم التبصيم'), findsOneWidget);
+    expect(find.text('أوقف تشغيل VPN ثم حاول مرة أخرى.'), findsOneWidget);
+  });
+
+  testWidgets('without location, the punch stops with a clear reason', (tester) async {
+    await pumpApp(tester, FakeAuth(mustChange: false, device: DeviceStatus.ok)..signedIn = true);
+    await tester.tap(find.byKey(const Key('punchButton')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('punchReason')), findsOneWidget);
+    expect(find.textContaining('فعّل الموقع'), findsOneWidget);
   });
 }
