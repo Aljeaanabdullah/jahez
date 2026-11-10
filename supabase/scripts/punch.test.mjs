@@ -189,6 +189,7 @@ test('employees cannot read other people\'s punches or call the server helpers',
   assert.ok(data.every((r) => r.employee_id === employeeId));
   const { error } = await session.rpc('face_distance', { p_employee_id: employeeId, p_embedding: `[${enrolled.join(',')}]` });
   assert.ok(error);
-  const { error: sitesError } = await session.rpc('sites_near', { p_employee_id: employeeId, p_lat: 0, p_lng: 0 });
+  const { error: sitesError } = await session.rpc('sites_near', { p_employee_id: employeeId, p_lat: 0, p_lng: 0, p_on: '2026-11-10' });
   assert.ok(sitesError);
+  assert.match(sitesError.message, /permission denied/);
 });

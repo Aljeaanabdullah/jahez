@@ -1,4 +1,4 @@
-// Jahez — punch in / out (Phases 6–7). Every attempt is checked here, on the server, and recorded.
+// Jahez — punch in / out (Phases 6–8). Every attempt is checked here, on the server, and recorded.
 // Body: {
 //   "device_identifier": string,
 //   "location": { "lat": number, "lng": number, "accuracy": number },
@@ -126,15 +126,27 @@ Deno.serve(async (req) => {
   else if (accuracy > MAX_ACCURACY_M) reason = "weak_gps";
   else if (body.model_version !== MODEL_VERSION) reason = "wrong_model_version";
 
+  // In or out, and for which shift: decided by the rules engine from the shift windows.
+  const { data: slots, error: slotError } = await db.rpc("punch_slot", { p_employee: me.id, p_at: now.toISOString() });
+  const slot = Array.isArray(slots) ? slots[0] : null;
+  if (slotError || !slot) return json(500, { error: "rules_failed" });
+  const punchType: string = slot.punch_type ?? "check_in";
+
+  // Enabled sites, plus a site of an approved external mission for this shift's date (Phase 8).
+  const shiftDate: string = slot.shift_date ?? kuwaitDate(now);
+  let byMission = false;
   if (!reason) {
-    const { data: near } = await db.rpc("sites_near", { p_employee_id: me.id, p_lat: lat, p_lng: lng });
+    const { data: near } = await db.rpc("sites_near", { p_employee_id: me.id, p_lat: lat, p_lng: lng, p_on: shiftDate });
     const nearest = Array.isArray(near) ? near[0] : null;
     if (!nearest) reason = "no_site";
     else {
       distanceM = Math.round(nearest.distance_m);
       site = { name_ar: nearest.name_ar, name_en: nearest.name_en };
       if (nearest.distance_m > nearest.radius_m) reason = "outside_site";
-      else siteId = nearest.site_id;
+      else {
+        siteId = nearest.site_id;
+        byMission = nearest.by_mission === true;
+      }
     }
   }
 
@@ -150,12 +162,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  // In or out, and for which shift: decided by the rules engine from the shift windows.
-  const { data: slots, error: slotError } = await db.rpc("punch_slot", { p_employee: me.id, p_at: now.toISOString() });
-  const slot = Array.isArray(slots) ? slots[0] : null;
-  if (slotError || !slot) return json(500, { error: "rules_failed" });
   if (!reason && slot.reason) reason = slot.reason;
-  const punchType: string = slot.punch_type ?? "check_in";
 
   // Keep the photo of every attempt for review (deleted after 3 months, Phase 12).
   const photoPath = `${me.id}/${now.getTime()}.jpg`;
@@ -166,7 +173,7 @@ Deno.serve(async (req) => {
     employee_id: me.id,
     punch_type: punchType,
     punched_at: now.toISOString(),
-    shift_date: slot.shift_date ?? kuwaitDate(now),
+    shift_date: shiftDate,
     site_id: siteId,
     latitude: lat,
     longitude: lng,
@@ -177,7 +184,7 @@ Deno.serve(async (req) => {
     face_score: faceDistance,
     liveness_passed: body.report?.liveness?.passed === true,
     photo_path: uploadError ? null : photoPath,
-    client_report: { ...(body.report ?? {}), device_identifier: body.device_identifier },
+    client_report: { ...(body.report ?? {}), device_identifier: body.device_identifier, by_mission: byMission },
   }).select("id").single();
   if (insertError || !saved) return json(500, { error: "save_failed" });
 
