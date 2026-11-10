@@ -53,6 +53,26 @@ class Strings {
   String get enrollReplaces => get('enroll_replaces');
   String get cameraError => get('camera_error');
 
+  String get punchIn => get('punch_in');
+  String get punchOut => get('punch_out');
+  String get punchToday => get('punch_today');
+  String get punchNone => get('punch_none');
+  String get punchChecking => get('punch_checking');
+  String get punchSending => get('punch_sending');
+  String get punchLookAtCamera => get('punch_look_at_camera');
+  String get punchFaceCamera => get('punch_face_camera');
+  String get punchAccepted => get('punch_accepted');
+  String get punchRejected => get('punch_rejected');
+  String get punchTryAgain => get('punch_try_again');
+  String get punchDone => get('punch_done');
+  String get punchRefused => get('punch_refused');
+
+  /// Instruction for a liveness challenge (`blink`, `turnHead`, `smile`).
+  String challenge(String name) => get('challenge_$name');
+
+  /// Why a punch was refused (`outside_site`, `face_mismatch`, …).
+  String punchReason(String code) => _t['punch_reason_$code'] ?? _t['error_generic']!;
+
   /// Text for a photo quality problem (`no_face`, `too_far`, …).
   String quality(String code) => _t['quality_$code'] ?? _t['quality_no_face']!;
 
@@ -100,6 +120,39 @@ const _ar = {
   'error_other_device':
       'حسابك مرتبط بجوال آخر. إذا غيّرت جوالك، اطلب من مدير النظام فك الربط.',
   'error_device_taken': 'هذا الجوال مرتبط بحساب موظف آخر. لا يمكن استخدامه لحسابك.',
+  'punch_in': 'تسجيل دخول',
+  'punch_out': 'تسجيل خروج',
+  'punch_today': 'بصمات اليوم',
+  'punch_none': 'لا توجد بصمات اليوم.',
+  'punch_checking': 'جاري فحص الجوال والموقع…',
+  'punch_sending': 'جاري التحقق…',
+  'punch_look_at_camera': 'ضع وجهك داخل الإطار.',
+  'punch_face_camera': 'الآن انظر مباشرة إلى الكاميرا.',
+  'punch_accepted': 'تم التبصيم بنجاح',
+  'punch_rejected': 'لم يتم التبصيم',
+  'punch_try_again': 'حاول مرة أخرى',
+  'punch_done': 'تم',
+  'punch_refused': 'مرفوضة',
+  'challenge_blink': 'ارمش بعينيك.',
+  'challenge_turnHead': 'التفت برأسك يميناً أو يساراً.',
+  'challenge_smile': 'ابتسم.',
+  'punch_reason_wrong_device': 'هذا ليس جوالك المرتبط بحسابك.',
+  'punch_reason_vpn': 'أوقف تشغيل VPN ثم حاول مرة أخرى.',
+  'punch_reason_mock_location': 'تم اكتشاف تطبيق لتغيير الموقع. أوقفه ثم حاول مرة أخرى.',
+  'punch_reason_rooted': 'هذا الجوال معدّل (روت)، ولا يمكن التبصيم منه.',
+  'punch_reason_no_location': 'تعذّر تحديد موقعك. فعّل الموقع (GPS) واسمح للتطبيق باستخدامه.',
+  'punch_reason_liveness_failed': 'لم يكتمل التحقق من الوجه الحي. حاول مرة أخرى.',
+  'punch_reason_many_faces': 'يوجد أكثر من وجه أمام الكاميرا.',
+  'punch_reason_face_changed': 'اختفى الوجه أو تغيّر أثناء التحقق. حاول مرة أخرى.',
+  'punch_reason_weak_gps': 'إشارة الموقع ضعيفة. اقترب من مكان مفتوح وحاول مرة أخرى.',
+  'punch_reason_outside_site': 'أنت خارج نطاق موقع العمل.',
+  'punch_reason_no_site': 'لا يوجد موقع عمل مفعّل لك. تواصل مع مدير النظام.',
+  'punch_reason_face_mismatch': 'الوجه لا يطابق الوجه المسجّل.',
+  'punch_reason_not_enrolled': 'وجهك غير مسجّل بعد. راجع الموارد البشرية.',
+  'punch_reason_no_consent': 'يجب الموافقة على جمع البيانات أولاً.',
+  'punch_reason_locked': 'محاولات فاشلة كثيرة. انتظر 5 دقائق ثم حاول.',
+  'punch_reason_wrong_model_version': 'حدّث التطبيق إلى آخر نسخة.',
+  'punch_reason_timeout': 'انتهى الوقت. حاول مرة أخرى.',
   'consent_title': 'الموافقة على جمع البيانات',
   'consent_body':
       'أوافق على أن تجمع الشركة صورة وجهي وبصمته الرقمية، وموقعي وقت التبصيم وأثناء حالات الطوارئ فقط، لغرض تسجيل الحضور والانصراف وسلامتي.\n\n'
@@ -176,6 +229,39 @@ const _en = {
   'error_other_device':
       'Your account is bound to another phone. If you changed phones, ask the system admin to unbind it.',
   'error_device_taken': 'This phone is bound to another employee and cannot be used for your account.',
+  'punch_in': 'Punch in',
+  'punch_out': 'Punch out',
+  'punch_today': "Today's punches",
+  'punch_none': 'No punches today.',
+  'punch_checking': 'Checking the phone and location…',
+  'punch_sending': 'Verifying…',
+  'punch_look_at_camera': 'Put your face inside the frame.',
+  'punch_face_camera': 'Now look straight at the camera.',
+  'punch_accepted': 'Punch recorded',
+  'punch_rejected': 'Punch not recorded',
+  'punch_try_again': 'Try again',
+  'punch_done': 'Done',
+  'punch_refused': 'Refused',
+  'challenge_blink': 'Blink your eyes.',
+  'challenge_turnHead': 'Turn your head left or right.',
+  'challenge_smile': 'Smile.',
+  'punch_reason_wrong_device': 'This is not the phone bound to your account.',
+  'punch_reason_vpn': 'Turn off the VPN and try again.',
+  'punch_reason_mock_location': 'A location-faking app was detected. Turn it off and try again.',
+  'punch_reason_rooted': 'This phone is rooted; punching from it is not allowed.',
+  'punch_reason_no_location': 'Could not get your location. Turn on GPS and allow the app to use it.',
+  'punch_reason_liveness_failed': 'The live face check was not completed. Try again.',
+  'punch_reason_many_faces': 'More than one face in front of the camera.',
+  'punch_reason_face_changed': 'The face disappeared or changed during the check. Try again.',
+  'punch_reason_weak_gps': 'Weak location signal. Move to an open area and try again.',
+  'punch_reason_outside_site': 'You are outside the work site.',
+  'punch_reason_no_site': 'No work site is enabled for you. Contact the system admin.',
+  'punch_reason_face_mismatch': 'The face does not match the enrolled face.',
+  'punch_reason_not_enrolled': 'Your face is not enrolled yet. See HR.',
+  'punch_reason_no_consent': 'You must accept the data consent first.',
+  'punch_reason_locked': 'Too many failed attempts. Wait 5 minutes and try again.',
+  'punch_reason_wrong_model_version': 'Update the app to the latest version.',
+  'punch_reason_timeout': 'Time is up. Try again.',
   'consent_title': 'Consent to data collection',
   'consent_body':
       'I agree that the company collects a photo of my face and its digital template, and my location only when I punch and during emergencies, to record attendance and for my safety.\n\n'

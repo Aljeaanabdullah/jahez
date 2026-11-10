@@ -5,6 +5,8 @@ import 'auth/auth_service.dart';
 import 'enroll/enroll_service.dart';
 import 'face/face_capture.dart';
 import 'l10n.dart';
+import 'punch/phone_checks.dart';
+import 'punch/punch_service.dart';
 import 'screens/change_password_screen.dart';
 import 'screens/consent_screen.dart';
 import 'screens/device_blocked_screen.dart';
@@ -23,12 +25,16 @@ class JahezApp extends StatelessWidget {
     required this.auth,
     required this.enroll,
     required this.analyserFactory,
+    required this.punch,
+    required this.checks,
   });
 
   final AppSettings settings;
   final AuthService auth;
   final EnrollService enroll;
   final Future<FaceAnalyser> Function() analyserFactory;
+  final PunchService punch;
+  final PhoneChecks checks;
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +51,14 @@ class JahezApp extends StatelessWidget {
         darkTheme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: seedBlue, brightness: Brightness.dark),
         ),
-        home: AppFlow(settings: settings, auth: auth, enroll: enroll, analyserFactory: analyserFactory),
+        home: AppFlow(
+          settings: settings,
+          auth: auth,
+          enroll: enroll,
+          analyserFactory: analyserFactory,
+          punch: punch,
+          checks: checks,
+        ),
       ),
     );
   }
@@ -63,12 +76,16 @@ class AppFlow extends StatefulWidget {
     required this.auth,
     required this.enroll,
     required this.analyserFactory,
+    required this.punch,
+    required this.checks,
   });
 
   final AppSettings settings;
   final AuthService auth;
   final EnrollService enroll;
   final Future<FaceAnalyser> Function() analyserFactory;
+  final PunchService punch;
+  final PhoneChecks checks;
 
   @override
   State<AppFlow> createState() => _AppFlowState();
@@ -166,6 +183,8 @@ class _AppFlowState extends State<AppFlow> {
           onSignOut: _signOut,
           enroll: widget.enroll,
           analyserFactory: widget.analyserFactory,
+          punch: widget.punch,
+          checks: widget.checks,
         ),
     };
   }
