@@ -7,9 +7,10 @@
     "demo:reset": "node demo.mjs reset",
     "test:rls": "node --test rls.test.mjs",
     "test:auth": "node --test auth.test.mjs",
-    "test": "node --test rls.test.mjs auth.test.mjs enroll.test.mjs punch.test.mjs",
+    "test": "node --test --test-concurrency=1 rls.test.mjs auth.test.mjs enroll.test.mjs punch.test.mjs rules.test.mjs",
     "test:enroll": "node --test enroll.test.mjs",
-    "test:punch": "node --test punch.test.mjs"
+    "test:punch": "node --test punch.test.mjs",
+    "test:rules": "node --test rules.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0"

@@ -1,4 +1,4 @@
-// Jahez — punch in / out (Phase 6). Every attempt is checked here, on the server, and recorded.
+// Jahez — punch in / out (Phases 6–7). Every attempt is checked here, on the server, and recorded.
 // Body: {
 //   "device_identifier": string,
 //   "location": { "lat": number, "lng": number, "accuracy": number },
@@ -8,7 +8,8 @@
 //   "model_version": "dlib-resnet-v1/align-v1",
 //   "photo": string                     // JPEG, base64, kept for review
 // }
-// The server decides in/out, uses its own clock, and returns the result with a reason.
+// The server decides in/out from the shift windows (rules engine, Phase 7), uses its own clock,
+// and returns the result with a reason.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -41,7 +42,7 @@ type Body = {
 
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
-/** Kuwait calendar date of an instant (shift dates are refined by the rules engine in Phase 7). */
+/** Kuwait calendar date of an instant (used for refused attempts that belong to no shift). */
 export function kuwaitDate(d: Date): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kuwait" }).format(d);
 }
@@ -149,27 +150,23 @@ Deno.serve(async (req) => {
     }
   }
 
-  // In or out: the opposite of the last accepted punch.
-  const { data: lastAccepted } = await db
-    .from("attendance_punches")
-    .select("punch_type")
-    .eq("employee_id", me.id)
-    .eq("result", "accepted")
-    .order("punched_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  const punchType = lastAccepted?.punch_type === "check_in" ? "check_out" : "check_in";
+  // In or out, and for which shift: decided by the rules engine from the shift windows.
+  const { data: slots, error: slotError } = await db.rpc("punch_slot", { p_employee: me.id, p_at: now.toISOString() });
+  const slot = Array.isArray(slots) ? slots[0] : null;
+  if (slotError || !slot) return json(500, { error: "rules_failed" });
+  if (!reason && slot.reason) reason = slot.reason;
+  const punchType: string = slot.punch_type ?? "check_in";
 
   // Keep the photo of every attempt for review (deleted after 3 months, Phase 12).
   const photoPath = `${me.id}/${now.getTime()}.jpg`;
   const { error: uploadError } = await db.storage
     .from("punch-photos").upload(photoPath, photo, { contentType: "image/jpeg" });
 
-  const { error: insertError } = await db.from("attendance_punches").insert({
+  const { data: saved, error: insertError } = await db.from("attendance_punches").insert({
     employee_id: me.id,
     punch_type: punchType,
     punched_at: now.toISOString(),
-    shift_date: kuwaitDate(now),
+    shift_date: slot.shift_date ?? kuwaitDate(now),
     site_id: siteId,
     latitude: lat,
     longitude: lng,
@@ -181,8 +178,19 @@ Deno.serve(async (req) => {
     liveness_passed: body.report?.liveness?.passed === true,
     photo_path: uploadError ? null : photoPath,
     client_report: { ...(body.report ?? {}), device_identifier: body.device_identifier },
-  });
-  if (insertError) return json(500, { error: "save_failed" });
+  }).select("id").single();
+  if (insertError || !saved) return json(500, { error: "save_failed" });
+
+  // Accepted: update the day's record (on time / late minutes, or check-out / early-leave minutes).
+  let day: Record<string, unknown> | null = null;
+  if (!reason) {
+    const { error: applyError } = await db.rpc("attendance_apply_punch", { p_punch_id: saved.id, p_shift_start: slot.shift_start });
+    if (applyError) return json(500, { error: "rules_failed" });
+    const { data: row } = await db.from("attendance_days")
+      .select("arrival, departure, late_minutes, early_leave_minutes, shift_start, shift_end")
+      .eq("employee_id", me.id).eq("shift_start", slot.shift_start).maybeSingle();
+    day = row;
+  }
 
   return json(200, {
     result: reason ? "rejected" : "accepted",
@@ -191,5 +199,6 @@ Deno.serve(async (req) => {
     punched_at: now.toISOString(),
     site,
     distance_m: distanceM,
+    day,
   });
 });
