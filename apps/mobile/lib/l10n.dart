@@ -71,6 +71,10 @@ class Strings {
   String challenge(String name) => get('challenge_$name');
 
   /// Why a punch was refused (`outside_site`, `face_mismatch`, …).
+  String shiftTime(String from, String to) => get('shift_time').replaceAll('{from}', from).replaceAll('{to}', to);
+  String shiftOpens(String time) => get('shift_opens').replaceAll('{time}', time);
+  String shiftLate(int minutes) => get('shift_status_late').replaceAll('{minutes}', '$minutes');
+
   String punchReason(String code) => _t['punch_reason_$code'] ?? _t['error_generic']!;
 
   /// Text for a photo quality problem (`no_face`, `too_far`, …).
@@ -153,6 +157,19 @@ const _ar = {
   'punch_reason_locked': 'محاولات فاشلة كثيرة. انتظر 5 دقائق ثم حاول.',
   'punch_reason_wrong_model_version': 'حدّث التطبيق إلى آخر نسخة.',
   'punch_reason_timeout': 'انتهى الوقت. حاول مرة أخرى.',
+  'punch_reason_no_work_pattern': 'لا يوجد لك نمط دوام. تواصل مع الموارد البشرية.',
+  'punch_reason_no_shift_now': 'لا توجد وردية الآن. يفتح التبصيم قبل بداية ورديتك بساعة.',
+  'punch_reason_already_checked_out': 'سجّلت انصرافك من هذه الوردية.',
+  'punch_reason_checkin_window_closed': 'انتهت ورديتك، ولا يمكن تسجيل الحضور الآن.',
+  'punch_reason_rules_failed': 'حدث خطأ في الخادم. حاول مرة أخرى.',
+  'shift_title': 'ورديتك',
+  'shift_none': 'لا توجد وردية قريبة.',
+  'shift_time': 'من {from} إلى {to}',
+  'shift_opens': 'يفتح التبصيم الساعة {time}',
+  'shift_status_pending': 'لم تسجّل حضورك بعد',
+  'shift_status_on_time': 'حضرت في الوقت',
+  'shift_status_late': 'متأخر {minutes} دقيقة',
+  'shift_status_out': 'سجّلت الانصراف',
   'consent_title': 'الموافقة على جمع البيانات',
   'consent_body':
       'أوافق على أن تجمع الشركة صورة وجهي وبصمته الرقمية، وموقعي وقت التبصيم وأثناء حالات الطوارئ فقط، لغرض تسجيل الحضور والانصراف وسلامتي.\n\n'
@@ -262,6 +279,19 @@ const _en = {
   'punch_reason_locked': 'Too many failed attempts. Wait 5 minutes and try again.',
   'punch_reason_wrong_model_version': 'Update the app to the latest version.',
   'punch_reason_timeout': 'Time is up. Try again.',
+  'punch_reason_no_work_pattern': 'You have no work pattern. Contact HR.',
+  'punch_reason_no_shift_now': 'No shift now. Punching opens one hour before your shift.',
+  'punch_reason_already_checked_out': 'You already checked out of this shift.',
+  'punch_reason_checkin_window_closed': 'Your shift is over; you cannot check in now.',
+  'punch_reason_rules_failed': 'A server error happened. Try again.',
+  'shift_title': 'Your shift',
+  'shift_none': 'No upcoming shift.',
+  'shift_time': 'From {from} to {to}',
+  'shift_opens': 'Punching opens at {time}',
+  'shift_status_pending': 'Not checked in yet',
+  'shift_status_on_time': 'Checked in on time',
+  'shift_status_late': 'Late by {minutes} minutes',
+  'shift_status_out': 'Checked out',
   'consent_title': 'Consent to data collection',
   'consent_body':
       'I agree that the company collects a photo of my face and its digital template, and my location only when I punch and during emergencies, to record attendance and for my safety.\n\n'

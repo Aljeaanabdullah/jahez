@@ -35,6 +35,27 @@ class PunchEntry {
   final String? reason;
 }
 
+/// The current or next shift (from the server's rules engine).
+class ShiftInfo {
+  const ShiftInfo({
+    required this.start,
+    required this.end,
+    required this.checkinOpens,
+    required this.arrival,
+    required this.departure,
+    required this.lateMinutes,
+  });
+  final DateTime start;
+  final DateTime end;
+  final DateTime checkinOpens;
+  final String arrival; // pending | on_time | late | absent
+  final String departure; // pending | done | missing | not_applicable
+  final int lateMinutes;
+
+  bool get checkedIn => arrival == 'on_time' || arrival == 'late';
+  bool get checkedOut => departure == 'done';
+}
+
 abstract class PunchService {
   Future<PunchResult> punch({
     required double lat,
@@ -47,6 +68,9 @@ abstract class PunchService {
 
   /// Today's attempts for the signed-in employee, newest first.
   Future<List<PunchEntry>> today();
+
+  /// The current or next shift, or null when there is none in the next two days.
+  Future<ShiftInfo?> currentShift();
 }
 
 class SupabasePunchService implements PunchService {
@@ -118,5 +142,21 @@ class SupabasePunchService implements PunchService {
               reason: r['reject_reason'] as String?,
             ))
         .toList();
+  }
+
+  @override
+  Future<ShiftInfo?> currentShift() async {
+    final rows = await _client.rpc('my_shift_now') as List;
+    if (rows.isEmpty) return null;
+    final r = rows.first as Map<String, dynamic>;
+    DateTime t(String k) => DateTime.parse(r[k] as String).toLocal();
+    return ShiftInfo(
+      start: t('shift_start'),
+      end: t('shift_end'),
+      checkinOpens: t('checkin_opens'),
+      arrival: r['arrival'] as String,
+      departure: r['departure'] as String,
+      lateMinutes: (r['late_minutes'] as num).toInt(),
+    );
   }
 }
