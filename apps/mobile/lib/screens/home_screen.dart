@@ -39,6 +39,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   List<PunchEntry>? _today;
+  ShiftInfo? _shift;
 
   @override
   void initState() {
@@ -47,18 +48,60 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _load() async {
+    ShiftInfo? shift;
+    try {
+      shift = await widget.punch.currentShift();
+    } catch (_) {
+      shift = null;
+    }
     try {
       final list = await widget.punch.today();
-      if (mounted) setState(() => _today = list);
+      if (mounted) {
+        setState(() {
+          _today = list;
+          _shift = shift;
+        });
+      }
     } catch (_) {
-      if (mounted) setState(() => _today = const []);
+      if (mounted) {
+        setState(() {
+          _today = const [];
+          _shift = shift;
+        });
+      }
     }
   }
 
-  /// The server decides in/out; the button shows its best guess from today's accepted punches.
-  bool get _nextIsOut {
-    final accepted = (_today ?? const <PunchEntry>[]).where((p) => p.accepted);
-    return accepted.isNotEmpty && accepted.first.type == 'check_in';
+  /// The server decides in/out; the button shows its best guess from the current shift.
+  bool get _nextIsOut => _shift != null && _shift!.checkedIn && !_shift!.checkedOut;
+
+  Widget _shiftCard(Strings s, ColorScheme colors) {
+    String hm(DateTime d) => TimeOfDay.fromDateTime(d).format(context);
+    final shift = _shift;
+    if (shift == null) {
+      return Card(child: ListTile(key: const Key('shiftCard'), leading: const Icon(Icons.event_busy), title: Text(s.get('shift_none'))));
+    }
+    final String status;
+    final Color statusColor;
+    if (shift.checkedOut) {
+      (status, statusColor) = (s.get('shift_status_out'), colors.primary);
+    } else if (shift.arrival == 'late') {
+      (status, statusColor) = (s.shiftLate(shift.lateMinutes), colors.error);
+    } else if (shift.arrival == 'on_time') {
+      (status, statusColor) = (s.get('shift_status_on_time'), Colors.green);
+    } else if (DateTime.now().isBefore(shift.checkinOpens)) {
+      (status, statusColor) = (s.shiftOpens(hm(shift.checkinOpens)), colors.outline);
+    } else {
+      (status, statusColor) = (s.get('shift_status_pending'), colors.outline);
+    }
+    return Card(
+      child: ListTile(
+        key: const Key('shiftCard'),
+        leading: const Icon(Icons.schedule),
+        title: Text('${s.get('shift_title')} — ${s.shiftTime(hm(shift.start), hm(shift.end))}'),
+        subtitle: Text(status, style: TextStyle(color: statusColor)),
+      ),
+    );
   }
 
   Future<void> _punch() async {
@@ -92,7 +135,9 @@ class _HomeScreenState extends State<HomeScreen> {
             Text('${s.welcome}$comma $name', key: const Key('welcome'), style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 4),
             Text('${widget.profile.fileNumber}', textDirection: TextDirection.ltr, textAlign: TextAlign.start),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+            if (_today != null) _shiftCard(s, colors),
+            const SizedBox(height: 16),
             SizedBox(
               height: 72,
               child: FilledButton.icon(

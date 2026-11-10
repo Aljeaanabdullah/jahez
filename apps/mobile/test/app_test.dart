@@ -83,9 +83,13 @@ Future<FaceAnalyser> noAnalyser() => throw UnimplementedError('camera not used i
 
 class FakePunch implements PunchService {
   List<PunchEntry> entries = [];
+  ShiftInfo? shift;
 
   @override
   Future<List<PunchEntry>> today() async => entries;
+
+  @override
+  Future<ShiftInfo?> currentShift() async => shift;
 
   @override
   Future<PunchResult> punch({
@@ -221,6 +225,7 @@ void main() {
     await pumpApp(tester, auth);
     expect(find.byKey(const Key('welcome')), findsOneWidget);
 
+    await tester.scrollUntilVisible(find.text('تسجيل الخروج'), 200);
     await tester.tap(find.text('تسجيل الخروج'));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('signIn')), findsOneWidget);
@@ -285,11 +290,27 @@ void main() {
       ..entries = [
         PunchEntry(type: 'check_in', at: DateTime(2026, 11, 10, 7, 5), accepted: true),
         PunchEntry(type: 'check_in', at: DateTime(2026, 11, 10, 7, 1), accepted: false, reason: 'outside_site'),
-      ];
+      ]
+      ..shift = ShiftInfo(
+        start: DateTime(2026, 11, 10, 7),
+        end: DateTime(2026, 11, 10, 15),
+        checkinOpens: DateTime(2026, 11, 10, 6),
+        arrival: 'late',
+        departure: 'pending',
+        lateMinutes: 5,
+      );
     await pumpApp(tester, FakeAuth(mustChange: false, device: DeviceStatus.ok)..signedIn = true, punch: punch);
-    // Last accepted punch was in, so the button offers out.
+    // Checked in to the current shift, so the button offers out.
     expect(find.text('تسجيل خروج'), findsWidgets);
     expect(find.text('أنت خارج نطاق موقع العمل.'), findsOneWidget);
+    expect(find.textContaining('ورديتك'), findsOneWidget);
+    expect(find.text('متأخر 5 دقيقة'), findsOneWidget);
+  });
+
+  testWidgets('home says when there is no upcoming shift', (tester) async {
+    await pumpApp(tester, FakeAuth(mustChange: false, device: DeviceStatus.ok)..signedIn = true);
+    expect(find.text('لا توجد وردية قريبة.'), findsOneWidget);
+    expect(find.text('تسجيل دخول'), findsWidgets);
   });
 
   testWidgets('with a VPN on, the punch stops before the camera with a clear reason', (tester) async {
