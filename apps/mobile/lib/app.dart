@@ -7,6 +7,7 @@ import 'face/face_capture.dart';
 import 'l10n.dart';
 import 'punch/phone_checks.dart';
 import 'punch/punch_service.dart';
+import 'requests/requests_service.dart';
 import 'screens/change_password_screen.dart';
 import 'screens/consent_screen.dart';
 import 'screens/device_blocked_screen.dart';
@@ -27,6 +28,7 @@ class JahezApp extends StatelessWidget {
     required this.analyserFactory,
     required this.punch,
     required this.checks,
+    required this.requests,
   });
 
   final AppSettings settings;
@@ -35,6 +37,7 @@ class JahezApp extends StatelessWidget {
   final Future<FaceAnalyser> Function() analyserFactory;
   final PunchService punch;
   final PhoneChecks checks;
+  final RequestsService requests;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +61,7 @@ class JahezApp extends StatelessWidget {
           analyserFactory: analyserFactory,
           punch: punch,
           checks: checks,
+          requests: requests,
         ),
       ),
     );
@@ -78,6 +82,7 @@ class AppFlow extends StatefulWidget {
     required this.analyserFactory,
     required this.punch,
     required this.checks,
+    required this.requests,
   });
 
   final AppSettings settings;
@@ -86,6 +91,7 @@ class AppFlow extends StatefulWidget {
   final Future<FaceAnalyser> Function() analyserFactory;
   final PunchService punch;
   final PhoneChecks checks;
+  final RequestsService requests;
 
   @override
   State<AppFlow> createState() => _AppFlowState();
@@ -185,6 +191,7 @@ class _AppFlowState extends State<AppFlow> {
           analyserFactory: widget.analyserFactory,
           punch: widget.punch,
           checks: widget.checks,
+          requests: widget.requests,
         ),
     };
   }
