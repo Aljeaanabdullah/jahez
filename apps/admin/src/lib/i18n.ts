@@ -34,6 +34,7 @@ export const dictionaries = {
       organisation: "الهيكل التنظيمي",
       emergencies: "الطوارئ",
       auditLog: "سجل العمليات",
+      records: "سجل موظف",
     },
     errors: {
       invalid_file_number: "رقم الملف يجب أن يكون 6 أرقام.",
@@ -82,6 +83,7 @@ export const dictionaries = {
       organisation: "Organisation",
       emergencies: "Emergencies",
       auditLog: "Audit log",
+      records: "Employee record",
     },
     errors: {
       invalid_file_number: "The file number must be 6 digits.",
